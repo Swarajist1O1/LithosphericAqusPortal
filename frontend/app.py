@@ -10,8 +10,6 @@ import numpy as np
 # Add current directory to path for imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-# Import the chatbot
-from BoreingProject.frontend.app import GroundwaterChatbot
 
 # Import heuristic search capabilities for advanced optimization
 try:
@@ -24,7 +22,7 @@ except ImportError:
 
 # Page configuration
 st.set_page_config(
-    page_title="💧 Groundwater Monitoring System",
+    page_title="Groundwater Monitoring System",
     page_icon="🌊",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -281,6 +279,15 @@ def main():
     # Navbar buttons using Streamlit columns
     col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
     
+    with col1:
+        if st.button("📊 Dashboard", key="nav_dashboard", use_container_width=True):
+            st.session_state.nav_page = "📊 Dashboard"
+            st.rerun()
+    
+    
+    
+    
+    
     
     
     # JavaScript to move buttons into navbar
@@ -430,7 +437,11 @@ def show_modern_dashboard():
         """, unsafe_allow_html=True)
         
         fig_rain = px.line(
-            
+            rainfall_monthly,
+            x="year_month", y="rainfall_actual_mm",
+            title=f"Average Monthly Rainfall - {selected_state}",
+            labels={"rainfall_actual_mm": "Rainfall (mm)", "year_month": "Month"},
+            color_discrete_sequence=['#e74c3c']
         )
         fig_rain.update_layout(
             plot_bgcolor='rgba(0,0,0,0)',
@@ -452,7 +463,11 @@ def show_modern_dashboard():
         """, unsafe_allow_html=True)
         
         fig_gw = px.line(
-            
+            groundwater_monthly,
+            x="year_month", y="gw_level_m_bgl",
+            title=f"Average Monthly Groundwater Levels - {selected_state}",
+            labels={"gw_level_m_bgl": "Groundwater Level (m bgl)", "year_month": "Month"},
+            color_discrete_sequence=['#3498db']
         )
         fig_gw.update_layout(
             plot_bgcolor='rgba(0,0,0,0)',
@@ -580,20 +595,7 @@ def show_modern_dashboard():
     
     col1, col2, col3 = st.columns(3)
     
-    with col1:
-        if st.button("🔮 Get AI Prediction", use_container_width=True):
-            st.session_state.nav_page = "🤖 AI Assistant"
-            st.rerun()
     
-    with col2:
-        if st.button("📈 View Analytics", use_container_width=True):
-            st.session_state.nav_page = "📈 Analytics"
-            st.rerun()
-    
-    with col3:
-        if st.button("ℹ️ About System", use_container_width=True):
-            st.session_state.nav_page = "ℹ️ About"
-            st.rerun()
 
 def show_analytics():
     """Display advanced analytics page"""
@@ -647,7 +649,13 @@ def show_analytics():
         state_rainfall = rainfall.groupby("state_name")["rainfall_actual_mm"].mean().sort_values(ascending=False).head(10)
         
         fig_rainfall = px.bar(
-            
+            x=state_rainfall.values,
+            y=state_rainfall.index,
+            orientation='h',
+            title="Average Rainfall by State",
+            labels={'x': 'Rainfall (mm)', 'y': 'State'},
+            color=state_rainfall.values,
+            color_continuous_scale='Blues'
         )
         fig_rainfall.update_layout(height=400, showlegend=False)
         st.plotly_chart(fig_rainfall, use_container_width=True)
@@ -772,7 +780,7 @@ def show_analytics():
             st.rerun()
 
 def show_footer():
-    ""
+    return
 
 
 def show_chatbot():
