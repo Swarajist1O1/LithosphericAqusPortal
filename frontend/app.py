@@ -773,20 +773,7 @@ def show_analytics():
     
     col1, col2, col3 = st.columns(3)
     
-    with col1:
-        if st.button("📊 View Dashboard", use_container_width=True, key="analytics_to_dashboard"):
-            st.session_state.nav_page = "📊 Dashboard"
-            st.rerun()
-    
-    with col2:
-        if st.button("🤖 AI Assistant", use_container_width=True, key="analytics_to_chatbot"):
-            st.session_state.nav_page = "🤖 AI Assistant"
-            st.rerun()
-    
-    with col3:
-        if st.button("ℹ️ About System", use_container_width=True, key="analytics_to_about"):
-            st.session_state.nav_page = "ℹ️ About"
-            st.rerun()
+  
 
 def show_footer():
     return
