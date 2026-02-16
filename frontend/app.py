@@ -283,7 +283,16 @@ def main():
         if st.button("📊 Dashboard", key="nav_dashboard", use_container_width=True):
             st.session_state.nav_page = "📊 Dashboard"
             st.rerun()
+
+    with col2:
+        if st.button("🤖 AI Assistant", key="nav_chatbot", use_container_width=True):
+            st.session_state.nav_page = "🤖 AI Assistant"
+            st.rerun()
     
+    with col3:
+        if st.button("📈 Analytics", key="nav_analytics", use_container_width=True):
+            st.session_state.nav_page = "📈 Analytics"
+            st.rerun()
     
     
     
