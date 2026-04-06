@@ -17,8 +17,11 @@ from chatbot import GroundwaterChatbot
 
 # Import heuristic search capabilities for advanced optimization
 try:
-    sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'backend'))
+    sys.path.append(
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "backend")
+    )
     from heuristic_search import HeuristicSearchManager
+
     HEURISTIC_OPTIMIZATION_ENABLED = True
 except ImportError:
     HEURISTIC_OPTIMIZATION_ENABLED = False
@@ -29,14 +32,16 @@ st.set_page_config(
     page_title="Lithospheric Aqus Portal",
     page_icon="🌊",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
+
 
 def main():
     """Main application with modern interactive dashboard"""
 
     # Custom CSS for modern dashboard styling
-    st.markdown("""
+    st.markdown(
+        """
     <style>
         /* Import Google Fonts */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -262,16 +267,19 @@ def main():
         footer {visibility: hidden;}
         header {visibility: hidden;}
     </style>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
     # Initialize session state
-    if 'nav_page' not in st.session_state:
+    if "nav_page" not in st.session_state:
         st.session_state.nav_page = "Dashboard"
 
     # Navbar with brand and navigation buttons
     # 1. CSS to pull everything up by reducing Streamlit's default top padding
     # 1. Keep the CSS to pull everything up to the top
-    st.markdown("""
+    st.markdown(
+        """
     <style>
         /* Drop the padding to zero */
         .block-container {
@@ -283,10 +291,13 @@ def main():
             display: none;
         }
     </style>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
     # 2. The full-width title box (stays exactly the same)
-    st.markdown("""
+    st.markdown(
+        """
     <div style="
         background-color: #2b5c9c; 
         padding: 20px; 
@@ -301,7 +312,9 @@ def main():
     ">
         <h2 style="color: white; margin: 0; font-family: sans-serif;">Lithospheric Aqus Portal</h2>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
     # Navbar buttons using Streamlit columns
     col1, col2, col3 = st.columns([1, 1, 1])
@@ -322,7 +335,8 @@ def main():
             st.rerun()
 
     # JavaScript to move buttons into navbar
-    st.markdown("""
+    st.markdown(
+        """
     <script>
     // Move navbar buttons into the navbar
     setTimeout(function() {
@@ -342,7 +356,9 @@ def main():
         }
     }, 100);
     </script>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
     # Page content
     current_page = st.session_state.nav_page
@@ -700,9 +716,10 @@ def show_modern_dashboard():
         st.error(f"Map error: {e}")
         st.code(traceback.format_exc())
 
+
 def show_analytics():
     """Display advanced analytics page"""
-    
+
     # Load data for analytics
     @st.cache_data
     def load_analytics_data():
@@ -713,93 +730,111 @@ def show_analytics():
         rainfall = pd.read_csv(rainfall_path)
         groundwater = pd.read_csv(groundwater_path)
         return rainfall, groundwater
-    
+
     rainfall, groundwater = load_analytics_data()
-    
+
     # Summary statistics
     col1, col2, col3, col4 = st.columns(4)
-    
+
     with col1:
         st.metric("Total States", len(rainfall["state_name"].unique()))
-    
+
     with col2:
         st.metric("Total Districts", len(groundwater["district_name"].unique()))
-    
+
     with col3:
         avg_rainfall = rainfall["rainfall_actual_mm"].mean()
         st.metric("Avg Rainfall (mm)", f"{avg_rainfall:.1f}")
-    
+
     with col4:
         avg_gw = groundwater["gw_level_m_bgl"].mean()
         st.metric("Avg GW Level (m)", f"{avg_gw:.2f}")
-    
+
     # State-wise analysis
     st.markdown("### 🏛️ State-wise Analysis")
-    
+
     # Top states by rainfall
     col1, col2 = st.columns(2)
-    
+
     with col1:
         st.markdown("**🌧️ Top 10 States by Average Rainfall**")
-        state_rainfall = rainfall.groupby("state_name")["rainfall_actual_mm"].mean().sort_values(ascending=False).head(10)
-        
+        state_rainfall = (
+            rainfall.groupby("state_name")["rainfall_actual_mm"]
+            .mean()
+            .sort_values(ascending=False)
+            .head(10)
+        )
+
         fig_rainfall = px.bar(
             x=state_rainfall.values,
             y=state_rainfall.index,
-            orientation='h',
+            orientation="h",
             title="Average Rainfall by State",
-            labels={'x': 'Rainfall (mm)', 'y': 'State'},
+            labels={"x": "Rainfall (mm)", "y": "State"},
             color=state_rainfall.values,
-            color_continuous_scale='Blues'
+            color_continuous_scale="Blues",
         )
         fig_rainfall.update_layout(height=400, showlegend=False)
         st.plotly_chart(fig_rainfall, use_container_width=True)
-    
+
     with col2:
         st.markdown("**💧 Top 10 States by Average Groundwater Level**")
-        state_gw = groundwater.groupby("state_name")["gw_level_m_bgl"].mean().sort_values(ascending=True).head(10)
-        
+        state_gw = (
+            groundwater.groupby("state_name")["gw_level_m_bgl"]
+            .mean()
+            .sort_values(ascending=True)
+            .head(10)
+        )
+
         fig_gw = px.bar(
             x=state_gw.values,
             y=state_gw.index,
-            orientation='h',
+            orientation="h",
             title="Average Groundwater Level by State",
-            labels={'x': 'GW Level (m bgl)', 'y': 'State'},
+            labels={"x": "GW Level (m bgl)", "y": "State"},
             color=state_gw.values,
-            color_continuous_scale='Reds'
+            color_continuous_scale="Reds",
         )
         fig_gw.update_layout(height=400, showlegend=False)
         st.plotly_chart(fig_gw, use_container_width=True)
-    
+
     # Time series analysis
     st.markdown("### 📊 National Trends")
-    
+
     # National average over time
-    national_rainfall = rainfall.groupby("year_month")["rainfall_actual_mm"].mean().reset_index()
-    national_gw = groundwater.groupby("year_month")["gw_level_m_bgl"].mean().reset_index()
-    
+    national_rainfall = (
+        rainfall.groupby("year_month")["rainfall_actual_mm"].mean().reset_index()
+    )
+    national_gw = (
+        groundwater.groupby("year_month")["gw_level_m_bgl"].mean().reset_index()
+    )
+
     fig_national = go.Figure()
-    
+
     # Add rainfall trace
-    fig_national.add_trace(go.Scatter(
-        x=national_rainfall["year_month"],
-        y=national_rainfall["rainfall_actual_mm"],
-        mode='lines+markers',
-        name='Rainfall (mm)',
-        line=dict(color='#3498db', width=3),
-        yaxis='y'
-    ))
-    
+    fig_national.add_trace(
+        go.Scatter(
+            x=national_rainfall["year_month"],
+            y=national_rainfall["rainfall_actual_mm"],
+            mode="lines+markers",
+            name="Rainfall (mm)",
+            line=dict(color="#3498db", width=3),
+            yaxis="y",
+        )
+    )
+
     # Add groundwater trace
-    fig_national.add_trace(go.Scatter(
-        x=national_gw["year_month"],
-        y=national_gw["gw_level_m_bgl"],
-        mode='lines+markers',
-        name='Groundwater Level (m bgl)',
-        line=dict(color='#e74c3c', width=3),
-        yaxis='y2'
-    ))
-    
+    fig_national.add_trace(
+        go.Scatter(
+            x=national_gw["year_month"],
+            y=national_gw["gw_level_m_bgl"],
+            mode="lines+markers",
+            name="Groundwater Level (m bgl)",
+            line=dict(color="#e74c3c", width=3),
+            yaxis="y2",
+        )
+    )
+
     # Update layout
     fig_national.update_layout(
         title="National Average Trends Over Time",
@@ -807,73 +842,81 @@ def show_analytics():
         yaxis=dict(title="Rainfall (mm)", side="left"),
         yaxis2=dict(title="Groundwater Level (m bgl)", side="right", overlaying="y"),
         height=500,
-        hovermode='x unified'
+        hovermode="x unified",
     )
-    
+
     st.plotly_chart(fig_national, use_container_width=True)
-    
+
     # Correlation analysis
     st.markdown("### 🔗 Correlation Analysis")
-    
+
     # Merge data for correlation
     merged_data = pd.merge(
-        rainfall.groupby(["state_name", "year_month"])["rainfall_actual_mm"].mean().reset_index(),
-        groundwater.groupby(["state_name", "year_month"])["gw_level_m_bgl"].mean().reset_index(),
+        rainfall.groupby(["state_name", "year_month"])["rainfall_actual_mm"]
+        .mean()
+        .reset_index(),
+        groundwater.groupby(["state_name", "year_month"])["gw_level_m_bgl"]
+        .mean()
+        .reset_index(),
         on=["state_name", "year_month"],
-        how="inner"
+        how="inner",
     )
-    
+
     correlation = merged_data["rainfall_actual_mm"].corr(merged_data["gw_level_m_bgl"])
-    
+
     col1, col2, col3 = st.columns(3)
-    
+
     with col1:
         st.metric("Rainfall-GW Correlation", f"{correlation:.3f}")
-    
+
     with col2:
         st.metric("Data Points", len(merged_data))
-    
+
     with col3:
         st.metric("States Analyzed", merged_data["state_name"].nunique())
-    
+
     # Scatter plot
     fig_scatter = px.scatter(
         merged_data,
         x="rainfall_actual_mm",
         y="gw_level_m_bgl",
         title="Rainfall vs Groundwater Level Correlation",
-        labels={"rainfall_actual_mm": "Rainfall (mm)", "gw_level_m_bgl": "Groundwater Level (m bgl)"},
-        color_discrete_sequence=['#27ae60']
+        labels={
+            "rainfall_actual_mm": "Rainfall (mm)",
+            "gw_level_m_bgl": "Groundwater Level (m bgl)",
+        },
+        color_discrete_sequence=["#27ae60"],
     )
     fig_scatter.update_layout(height=400)
     st.plotly_chart(fig_scatter, use_container_width=True)
-    
+
     # Quick actions for analytics
 
 
 def show_chatbot():
     """Display the AI chatbot"""
-    
-    
+
     try:
         # Initialize chatbot
         chatbot = GroundwaterChatbot()
         chatbot.display_chat_interface()
-        
-        
-             
+
     except Exception as e:
         st.error(f"Error initializing chatbot: {e}")
-        st.info("Please make sure all data files and the model are available in the correct directories.")
+        st.info(
+            "Please make sure all data files and the model are available in the correct directories."
+        )
+
 
 def show_about():
     """Display about information"""
     st.markdown("## About Groundwater Monitoring System")
-    
+
     col1, col2 = st.columns(2)
-    
+
     with col1:
-        st.markdown("""
+        st.markdown(
+            """
         <div class="feature-card">
             <h3>Dashboard Features</h3>
             <ul>
@@ -884,9 +927,12 @@ def show_about():
                 <li>Real-time data filtering</li>
             </ul>
         </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("""
+        """,
+            unsafe_allow_html=True,
+        )
+
+        st.markdown(
+            """
         <div class="feature-card">
             <h3>AI Assistant Features</h3>
             <ul>
@@ -897,10 +943,13 @@ def show_about():
                 <li>Interactive chat interface</li>
             </ul>
         </div>
-        """, unsafe_allow_html=True)
-    
+        """,
+            unsafe_allow_html=True,
+        )
+
     with col2:
-        st.markdown("""
+        st.markdown(
+            """
         <div class="feature-card">
             <h3>🔬 Technical Stack</h3>
             <ul>
@@ -912,9 +961,12 @@ def show_about():
                 <li><strong>Language:</strong> Python</li>
             </ul>
         </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("""
+        """,
+            unsafe_allow_html=True,
+        )
+
+        st.markdown(
+            """
         <div class="feature-card">
             <h3>📈 Data Sources</h3>
             <ul>
@@ -925,9 +977,12 @@ def show_about():
                 <li>565+ districts</li>
             </ul>
         </div>
-        """, unsafe_allow_html=True)
-    
-    st.markdown("""
+        """,
+            unsafe_allow_html=True,
+        )
+
+    st.markdown(
+        """
     <div class="feature-card">
         <h3>🎯 Use Cases</h3>
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
@@ -945,23 +1000,28 @@ def show_about():
             </div>
         </div>
     </div>
-    """, unsafe_allow_html=True)
-    
+    """,
+        unsafe_allow_html=True,
+    )
+
     # Quick actions for About page
-    st.markdown("""
+    st.markdown(
+        """
     <div class="interactive-card">
         <div class="card-header">
             <div class="card-title">⚡ Quick Actions</div>
         </div>
     </div>
-    """, unsafe_allow_html=True)
-    
+    """,
+        unsafe_allow_html=True,
+    )
+
     col1, col2, col3 = st.columns(3)
-    
-    
-    
+
     with col2:
-        if st.button("🤖 AI Assistant", use_container_width=True, key="about_to_chatbot"):
+        if st.button(
+            "🤖 AI Assistant", use_container_width=True, key="about_to_chatbot"
+        ):
             st.session_state.nav_page = "🤖 AI Assistant"
             st.rerun()
 
