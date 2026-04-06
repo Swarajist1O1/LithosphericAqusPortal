@@ -246,7 +246,7 @@ class GroundwaterChatbot:
     def get_groundwater_data(self, state: str = None, district: str = None, year_month: str = None) -> pd.DataFrame:
         """Get groundwater data with optional filters"""
         data = self.groundwater.copy()
-        if GroundwaterChatbotstate:
+        if state:
             data = data[data["state_name"] == state]
         if district:
             data = data[data["district_name"] == district]

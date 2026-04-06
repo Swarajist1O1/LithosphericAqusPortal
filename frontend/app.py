@@ -6,6 +6,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import numpy as np
+import folium
+from streamlit_folium import st_folium
 
 # Add current directory to path for imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -32,7 +34,7 @@ st.set_page_config(
 
 def main():
     """Main application with modern interactive dashboard"""
-    
+
     # Custom CSS for modern dashboard styling
     st.markdown("""
     <style>
@@ -261,43 +263,64 @@ def main():
         header {visibility: hidden;}
     </style>
     """, unsafe_allow_html=True)
-    
+
     # Initialize session state
     if 'nav_page' not in st.session_state:
         st.session_state.nav_page = "Dashboard"
-    
+
     # Navbar with brand and navigation buttons
+    # 1. CSS to pull everything up by reducing Streamlit's default top padding
+    # 1. Keep the CSS to pull everything up to the top
     st.markdown("""
-    <div class="navbar">
-        <div class="navbar-content">
-            <div class="navbar-brand"> Groundwater System</div>
-            <div class="navbar-nav">
-                <div id="navbar-buttons"></div>
-            </div>
-        </div>
+    <style>
+        /* Drop the padding to zero */
+        .block-container {
+            padding-top: 0rem !important; 
+        }
+        
+        /* Hide the default Streamlit top header completely */
+        header[data-testid="stHeader"] {
+            display: none;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # 2. The full-width title box (stays exactly the same)
+    st.markdown("""
+    <div style="
+        background-color: #2b5c9c; 
+        padding: 20px; 
+        text-align: center; 
+        margin-bottom: 30px;
+        width: 100vw;
+        position: relative;
+        left: 50%;
+        right: 50%;
+        margin-left: -50vw;
+        margin-right: -50vw;
+    ">
+        <h2 style="color: white; margin: 0; font-family: sans-serif;">Lithospheric Aqus Portal</h2>
     </div>
     """, unsafe_allow_html=True)
-    
+
     # Navbar buttons using Streamlit columns
-    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
-    
+    col1, col2, col3 = st.columns([1, 1, 1])
+
     with col1:
         if st.button("Dashboard", key="nav_dashboard", use_container_width=True):
             st.session_state.nav_page = "📊 Dashboard"
             st.rerun()
-    
+
     with col2:
         if st.button("AI Assistant", key="nav_chatbot", use_container_width=True):
             st.session_state.nav_page = "🤖 AI Assistant"
             st.rerun()
-    
+
     with col3:
         if st.button("Analytics", key="nav_analytics", use_container_width=True):
             st.session_state.nav_page = "📈 Analytics"
             st.rerun()
-    
-    
-    
+
     # JavaScript to move buttons into navbar
     st.markdown("""
     <script>
@@ -320,8 +343,7 @@ def main():
     }, 100);
     </script>
     """, unsafe_allow_html=True)
-    
-    
+
     # Page content
     current_page = st.session_state.nav_page
     if current_page == "📊 Dashboard":
@@ -336,12 +358,13 @@ def main():
         # Fallback to dashboard if page is not recognized
         st.session_state.nav_page = "📊 Dashboard"
         show_modern_dashboard()
-    
+
     # Footer
+
 
 def show_modern_dashboard():
     """Display the modern interactive dashboard"""
-    
+
     # Load data
     @st.cache_data
     def load_data():
@@ -352,168 +375,171 @@ def show_modern_dashboard():
         rainfall = pd.read_csv(rainfall_path)
         groundwater = pd.read_csv(groundwater_path)
         return rainfall, groundwater
-    
+
     rainfall, groundwater = load_data()
-    
+
     # Calculate summary statistics
     total_states = len(rainfall["state_name"].unique())
     total_districts = len(groundwater["district_name"].unique())
     total_records = len(rainfall) + len(groundwater)
     latest_date = rainfall["year_month"].max()
-    
+
     # Display stats cards
-    st.markdown("""
+    st.markdown(
+        """
     <div class="stats-container">
         <div class="stat-card confirmed">
             <div class="stat-title">Total States</div>
-            <div class="stat-value" style="color: #e74c3c;">""" + str(total_states) + """</div>
+            <div class="stat-value" style="color: #e74c3c;">"""
+        + str(total_states)
+        + """</div>
             <div class="stat-change positive">Coverage: 100%</div>
         </div>
         <div class="stat-card active">
             <div class="stat-title">Total Districts</div>
-            <div class="stat-value" style="color: #3498db;">""" + str(total_districts) + """</div>
+            <div class="stat-value" style="color: #3498db;">"""
+        + str(total_districts)
+        + """</div>
             <div class="stat-change positive">Active monitoring</div>
         </div>
         <div class="stat-card recovered">
             <div class="stat-title">Data Records</div>
-            <div class="stat-value" style="color: #27ae60;">""" + f"{total_records:,}" + """</div>
+            <div class="stat-value" style="color: #27ae60;">"""
+        + f"{total_records:,}"
+        + """</div>
             <div class="stat-change positive">Historical data</div>
         </div>
         <div class="stat-card deceased">
             <div class="stat-title">Latest Update</div>
-            <div class="stat-value" style="color: #95a5a6;">""" + latest_date + """</div>
+            <div class="stat-value" style="color: #95a5a6;">"""
+        + latest_date
+        + """</div>
             <div class="stat-change positive">Real-time</div>
         </div>
     </div>
-    """, unsafe_allow_html=True)
-    
+    """,
+        unsafe_allow_html=True,
+    )
+
     # Interactive filters
     col1, col2, col3, col4 = st.columns(4)
-    
+
     with col1:
         states = sorted(rainfall["state_name"].unique())
         selected_state = st.selectbox("🏛️ Select State", states, key="state_filter")
-    
+
     with col2:
         years = sorted(rainfall["year_month"].str[:4].unique())
         selected_year = st.selectbox("📅 Select Year", years, key="year_filter")
-    
+
     with col3:
-        months = sorted(rainfall[rainfall["year_month"].str[:4] == selected_year]["year_month"].unique())
+        months = sorted(
+            rainfall[rainfall["year_month"].str[:4] == selected_year][
+                "year_month"
+            ].unique()
+        )
         selected_month = st.selectbox("📆 Select Month", months, key="month_filter")
-    
+
     with col4:
-        districts = sorted(groundwater[groundwater["state_name"] == selected_state]["district_name"].unique())
-        selected_district = st.selectbox("🏘️ Select District", districts, key="district_filter")
-    
+        districts = sorted(
+            groundwater[groundwater["state_name"] == selected_state][
+                "district_name"
+            ].unique()
+        )
+        selected_district = st.selectbox(
+            "🏘️ Select District", districts, key="district_filter"
+        )
+
     # Filter data
     rainfall_state = rainfall[rainfall["state_name"] == selected_state].copy()
     groundwater_state = groundwater[groundwater["state_name"] == selected_state].copy()
-    
+
     district_data = groundwater[
-        (groundwater["state_name"] == selected_state) &
-        (groundwater["district_name"] == selected_district)
+        (groundwater["state_name"] == selected_state)
+        & (groundwater["district_name"] == selected_district)
     ].copy()
-    
+
     # Convert to datetime
     rainfall_state["date"] = pd.to_datetime(rainfall_state["year_month"])
     groundwater_state["date"] = pd.to_datetime(groundwater_state["year_month"])
     district_data["date"] = pd.to_datetime(district_data["year_month"])
-    
+
     # Aggregate monthly data
-    rainfall_monthly = (
-        rainfall_state.groupby("year_month", as_index=False)["rainfall_actual_mm"].mean()
-    )
-    groundwater_monthly = (
-        groundwater_state.groupby("year_month", as_index=False)["gw_level_m_bgl"].mean()
-    )
-    
+    rainfall_monthly = rainfall_state.groupby("year_month", as_index=False)[
+        "rainfall_actual_mm"
+    ].mean()
+    groundwater_monthly = groundwater_state.groupby("year_month", as_index=False)[
+        "gw_level_m_bgl"
+    ].mean()
+
     # Create interactive charts
     col1, col2 = st.columns(2)
-    
+
+    col1, col2 = st.columns(2)
+
     with col1:
-        st.markdown("""
-        <div class="interactive-card">
-            <div class="card-header">
-                <div class="card-title">🌧️ Rainfall Trends</div>
-                <div class="card-actions">
-                    <span class="btn btn-secondary">Interactive Chart</span>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
+        st.subheader("🌧️ Rainfall Trends")
         fig_rain = px.line(
             rainfall_monthly,
-            x="year_month", y="rainfall_actual_mm",
+            x="year_month",
+            y="rainfall_actual_mm",
             title=f"Average Monthly Rainfall - {selected_state}",
             labels={"rainfall_actual_mm": "Rainfall (mm)", "year_month": "Month"},
-            color_discrete_sequence=['#e74c3c']
+            color_discrete_sequence=["#e74c3c"],
         )
         fig_rain.update_layout(
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(family="Inter, sans-serif")
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            font=dict(family="Inter, sans-serif"),
         )
         st.plotly_chart(fig_rain, use_container_width=True)
-    
+
     with col2:
-        st.markdown("""
-        <div class="interactive-card">
-            <div class="card-header">
-                <div class="card-title">💧 Groundwater Levels</div>
-                <div class="card-actions">
-                    <span class="btn btn-secondary">Interactive Chart</span>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
+        st.subheader("💧 Groundwater Levels")
         fig_gw = px.line(
             groundwater_monthly,
-            x="year_month", y="gw_level_m_bgl",
+            x="year_month",
+            y="gw_level_m_bgl",
             title=f"Average Monthly Groundwater Levels - {selected_state}",
-            labels={"gw_level_m_bgl": "Groundwater Level (m bgl)", "year_month": "Month"},
-            color_discrete_sequence=['#3498db']
+            labels={
+                "gw_level_m_bgl": "Groundwater Level (m bgl)",
+                "year_month": "Month",
+            },
+            color_discrete_sequence=["#3498db"],
         )
         fig_gw.update_layout(
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(family="Inter, sans-serif")
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            font=dict(family="Inter, sans-serif"),
         )
         st.plotly_chart(fig_gw, use_container_width=True)
-    
-    # District-level analysis
+
+    # District level analysis
     if not district_data.empty:
-        st.markdown("""
-        <div class="interactive-card">
-            <div class="card-header">
-                <div class="card-title">📍 District-Level Analysis</div>
-                <div class="card-actions">
-                    <span class="btn btn-secondary">District Analysis</span>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
+        st.subheader("📍 District-Level Analysis")
         fig_dist = px.line(
             district_data,
-            x="year_month", y="gw_level_m_bgl",
+            x="year_month",
+            y="gw_level_m_bgl",
             title=f"Groundwater Levels - {selected_district}",
-            labels={"gw_level_m_bgl": "Groundwater Level (m bgl)", "year_month": "Month"},
-            color_discrete_sequence=['#27ae60']
+            labels={
+                "gw_level_m_bgl": "Groundwater Level (m bgl)",
+                "year_month": "Month",
+            },
+            color_discrete_sequence=["#27ae60"],
         )
         fig_dist.update_layout(
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(family="Inter, sans-serif")
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            font=dict(family="Inter, sans-serif"),
         )
         st.plotly_chart(fig_dist, use_container_width=True)
     else:
         st.warning(f"No district-level data available for {selected_district}")
-    
+
     # Map section
-    st.markdown("""
+    st.markdown(
+        """
     <div class="interactive-card">
         <div class="card-header">
             <div class="card-title">🗺️ Geographic Visualization</div>
@@ -522,87 +548,157 @@ def show_modern_dashboard():
             </div>
         </div>
     </div>
-    """, unsafe_allow_html=True)
-    
+    """,
+        unsafe_allow_html=True,
+    )
+
     # Load regions data for map
     @st.cache_data
     def load_regions():
         import geopandas as gpd
+
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         geojson_path = os.path.join(base_dir, "data", "regions.geojson")
         return gpd.read_file(geojson_path)
-    
+
     try:
         regions = load_regions()
-        
+
         # Compute centroids
-        regions["centroid"] = regions.geometry.centroid
-        regions["lon"] = regions.centroid.x
-        regions["lat"] = regions.centroid.y
-        
+        regions_projected = regions.to_crs(
+            epsg=3857
+        )  # Web Mercator for centroid calculation
+        regions["centroid"] = regions_projected.geometry.centroid.to_crs(
+            epsg=4326
+        )  # Back to lat/lon
+        regions["lon"] = regions["centroid"].x
+        regions["lat"] = regions["centroid"].y
+        fallback_centroids = {
+            "andaman and nicobar islands": (11.7401, 92.6586),
+            "andhra pradesh": (15.9129, 79.7400),
+            "arunachal pradesh": (28.2180, 94.7278),
+            "assam": (26.2006, 92.9376),
+            "bihar": (25.0961, 85.3131),
+            "chandigarh": (30.7333, 76.7794),
+            "chhattisgarh": (21.2787, 81.8661),
+            "dadra and nagar haveli": (20.1809, 73.0169),
+            "daman and diu": (20.4283, 72.8397),
+            "delhi": (28.7041, 77.1025),
+            "goa": (15.2993, 74.1240),
+            "gujarat": (22.2587, 71.1924),
+            "haryana": (29.0588, 76.0856),
+            "himachal pradesh": (31.1048, 77.1734),
+            "jammu and kashmir": (33.7782, 76.5762),
+            "jharkhand": (23.6102, 85.2799),
+            "karnataka": (15.3173, 75.7139),
+            "kerala": (10.8505, 76.2711),
+            "ladakh": (34.2268, 77.5619),
+            "lakshadweep": (10.5667, 72.6417),
+            "madhya pradesh": (22.9734, 78.6569),
+            "maharashtra": (19.7515, 75.7139),
+            "manipur": (24.6637, 93.9063),
+            "meghalaya": (25.4670, 91.3662),
+            "mizoram": (23.1645, 92.9376),
+            "nagaland": (26.1584, 94.5624),
+            "odisha": (20.9517, 85.0985),
+            "puducherry": (11.9416, 79.8083),
+            "punjab": (31.1471, 75.3412),
+            "rajasthan": (27.0238, 74.2179),
+            "sikkim": (27.5330, 88.5122),
+            "tamil nadu": (11.1271, 78.6569),
+            "telangana": (18.1124, 79.0193),
+            "tripura": (23.9408, 91.9882),
+            "uttar pradesh": (26.8467, 80.9462),
+            "uttarakhand": (30.0668, 79.0193),
+            "west bengal": (22.9868, 87.8550),
+        }
+
+        def fill_centroid(row):
+            if pd.isna(row["lat"]):
+                key = row["state_name"].lower().strip()
+                if key in fallback_centroids:
+                    row["lat"], row["lon"] = fallback_centroids[key]
+                    return row
+
+            return row
+
         # Aggregate data for map
+        # Normalize state names to lowercase + strip whitespace before merging
+        regions["state_name_key"] = regions["state_name"].str.lower().str.strip()
+
         rainfall_latest = (
             rainfall[rainfall["year_month"] == selected_month]
-            .groupby("state_name", as_index=False)["rainfall_actual_mm"].sum()
-            .merge(regions[["state_name", "lat", "lon"]], on="state_name", how="left")
+            .groupby("state_name", as_index=False)["rainfall_actual_mm"]
+            .sum()
         )
-        
+        rainfall_latest["lat"] = (
+            rainfall_latest["state_name"]
+            .str.lower()
+            .str.strip()
+            .map({k: v[0] for k, v in fallback_centroids.items()})
+        )
+        rainfall_latest["lon"] = (
+            rainfall_latest["state_name"]
+            .str.lower()
+            .str.strip()
+            .map({k: v[1] for k, v in fallback_centroids.items()})
+        )
+
         groundwater_latest = (
             groundwater[groundwater["year_month"] == selected_month]
-            .groupby("state_name", as_index=False)["gw_level_m_bgl"].mean()
-            .merge(regions[["state_name", "lat", "lon"]], on="state_name", how="left")
+            .groupby("state_name", as_index=False)["gw_level_m_bgl"]
+            .mean()
         )
-        
+        groundwater_latest["lat"] = (
+            groundwater_latest["state_name"]
+            .str.lower()
+            .str.strip()
+            .map({k: v[0] for k, v in fallback_centroids.items()})
+        )
+        groundwater_latest["lon"] = (
+            groundwater_latest["state_name"]
+            .str.lower()
+            .str.strip()
+            .map({k: v[1] for k, v in fallback_centroids.items()})
+        )
+
         # Create map
-        import folium
-        from streamlit_folium import st_folium
-        
+
         m = folium.Map(location=[22, 78], zoom_start=5, tiles="cartodbpositron")
-        
+
         # Add rainfall markers
         for _, row in rainfall_latest.iterrows():
             if pd.notnull(row["lat"]) and pd.notnull(row["lon"]):
                 folium.CircleMarker(
                     location=[row["lat"], row["lon"]],
-                    radius=8,
+                    radius=10,
                     color="blue",
                     fill=True,
                     fill_color="blue",
                     fill_opacity=0.6,
                     popup=f"{row['state_name']}<br>Rainfall: {row['rainfall_actual_mm']:.2f} mm",
                 ).add_to(m)
-        
+
         # Add groundwater markers
         for _, row in groundwater_latest.iterrows():
             if pd.notnull(row["lat"]) and pd.notnull(row["lon"]):
                 folium.CircleMarker(
                     location=[row["lat"], row["lon"]],
-                    radius=8,
+                    radius=5,
                     color="green",
                     fill=True,
                     fill_color="green",
                     fill_opacity=0.6,
                     popup=f"{row['state_name']}<br>GW Level: {row['gw_level_m_bgl']:.2f} m bgl",
                 ).add_to(m)
-        
+
         st_folium(m, width=900, height=600)
-        
+
     except Exception as e:
-        st.warning(f"Map not available: {e}")
-        st.info("Please ensure the regions.geojson file is available in the data directory.")
-    
-    # Quick actions
-    st.markdown("""
-    <div class="interactive-card">
-        <div class="card-header">
-            <div class="card-title">⚡ Quick Actions</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns(3)
-    
-    
+        import traceback
+
+        st.error(f"Map error: {e}")
+        st.code(traceback.format_exc())
 
 def show_analytics():
     """Display advanced analytics page"""
@@ -619,14 +715,6 @@ def show_analytics():
         return rainfall, groundwater
     
     rainfall, groundwater = load_analytics_data()
-    
-    st.markdown("""
-    <div class="interactive-card">
-        <div class="card-header">
-            <div class="card-title">📈 Advanced Analytics</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
     
     # Summary statistics
     col1, col2, col3, col4 = st.columns(4)
@@ -761,45 +849,18 @@ def show_analytics():
     st.plotly_chart(fig_scatter, use_container_width=True)
     
     # Quick actions for analytics
-    st.markdown("""
-    <div class="interactive-card">
-        <div class="card-header">
-            <div class="card-title">⚡ Quick Actions</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns(3)
-    
-    
-    
-    
-    
-    
-
-    
 
 
 def show_chatbot():
     """Display the AI chatbot"""
-    st.markdown("## 🤖 AI Groundwater Assistant")
-    st.markdown("Ask me anything about groundwater levels, rainfall data, and predictions!")
+    
     
     try:
         # Initialize chatbot
         chatbot = GroundwaterChatbot()
         chatbot.display_chat_interface()
         
-        # Quick actions for AI Assistant
-        st.markdown("""
-        <div class="interactive-card">
-            <div class="card-header">
-                <div class="card-title">⚡ Quick Actions</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
         
-        col1, col2, col3 = st.columns(3)
              
     except Exception as e:
         st.error(f"Error initializing chatbot: {e}")
@@ -807,7 +868,7 @@ def show_chatbot():
 
 def show_about():
     """Display about information"""
-    st.markdown("## ℹ️ About Groundwater Monitoring System")
+    st.markdown("## About Groundwater Monitoring System")
     
     col1, col2 = st.columns(2)
     
@@ -903,8 +964,7 @@ def show_about():
         if st.button("🤖 AI Assistant", use_container_width=True, key="about_to_chatbot"):
             st.session_state.nav_page = "🤖 AI Assistant"
             st.rerun()
-    
-    
+
 
 if __name__ == "__main__":
     main()
